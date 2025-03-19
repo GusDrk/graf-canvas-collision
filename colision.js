@@ -5,72 +5,39 @@ const window_height = window.innerHeight;
 const window_width = window.innerWidth;
 canvas.height = window_height;
 canvas.width = window_width;
-canvas.style.background = "#ff8";
+canvas.style.background = "#ff09f";
+
+let removedCircles = 0;
 
 class Circle {
-    constructor(x, y, radius, color, text, speed) {
+    constructor(x, radius, color, text, speed) {
         this.posX = x;
-        this.posY = y;
+        this.posY = -radius; // Inicia justo fuera del canvas en la parte superior
         this.radius = radius;
-        this.originalColor = color;
         this.color = color;
         this.text = text;
         this.speed = speed;
-        this.dx = (Math.random() < 0.5 ? -1 : 1) * this.speed;
-        this.dy = (Math.random() < 0.5 ? -1 : 1) * this.speed;
-        this.inCollision = false;
     }
 
     draw(context) {
         context.beginPath();
-        context.strokeStyle = this.color;
+        context.fillStyle = this.color;
+        context.arc(this.posX, this.posY, this.radius, 0, Math.PI * 2, false);
+        context.fill();
+        context.closePath();
+
+        context.fillStyle = "#000";
         context.textAlign = "center";
         context.textBaseline = "middle";
         context.font = "20px Arial";
         context.fillText(this.text, this.posX, this.posY);
-        context.lineWidth = 2;
-        context.arc(this.posX, this.posY, this.radius, 0, Math.PI * 2, false);
-        context.stroke();
-        context.closePath();
     }
 
-    update(context, circles) {
-        this.checkCollisions(circles);
-        this.draw(context);
-
-        this.posX += this.dx;
-        if (this.posX + this.radius > window_width || this.posX - this.radius < 0) {
-            this.dx = -this.dx;
+    update() {
+        this.posY += this.speed;
+        if (this.posY - this.radius > window_height) {
+            this.posY = -this.radius; // Reiniciar desde la parte superior
         }
-        this.posY += this.dy;
-        if (this.posY + this.radius > window_height || this.posY - this.radius < 0) {
-            this.dy = -this.dy;
-        }
-    }
-
-    checkCollisions(circles) {
-        this.inCollision = false;
-        circles.forEach(other => {
-            if (this !== other) {
-                let dx = this.posX - other.posX;
-                let dy = this.posY - other.posY;
-                let distance = Math.sqrt(dx * dx + dy * dy);
-                if (distance < this.radius + other.radius) {
-                    this.inCollision = true;
-                    this.resolveCollision(other);
-                }
-            }
-        });
-        this.color = this.inCollision ? "#0000FF" : this.originalColor;
-    }
-
-    resolveCollision(other) {
-        let tempDx = this.dx;
-        let tempDy = this.dy;
-        this.dx = other.dx;
-        this.dy = other.dy;
-        other.dx = tempDx;
-        other.dy = tempDy;
     }
 }
 
@@ -80,19 +47,45 @@ function generateCircles(n) {
     for (let i = 0; i < n; i++) {
         let radius = Math.random() * 30 + 20;
         let x = Math.random() * (window_width - radius * 2) + radius;
-        let y = Math.random() * (window_height - radius * 2) + radius;
         let color = `#${Math.floor(Math.random() * 16777215).toString(16)}`;
         let speed = Math.random() * 4 + 1;
         let text = `C${i + 1}`;
-        circles.push(new Circle(x, y, radius, color, text, speed));
+        circles.push(new Circle(x, radius, color, text, speed));
     }
+}
+
+canvas.addEventListener("click", function(event) {
+    const mouseX = event.clientX;
+    const mouseY = event.clientY;
+    
+    for (let i = circles.length - 1; i >= 0; i--) {
+        let circle = circles[i];
+        let dx = mouseX - circle.posX;
+        let dy = mouseY - circle.posY;
+        let distance = Math.sqrt(dx * dx + dy * dy);
+        
+        if (distance < circle.radius) {
+            circles.splice(i, 1);
+            removedCircles++;
+            break;
+        }
+    }
+});
+
+function drawCounter() {
+    ctx.fillStyle = "#000";
+    ctx.font = "20px Arial";
+    ctx.textAlign = "right";
+    ctx.fillText(`Eliminados: ${removedCircles}`, window_width - 20, 30);
 }
 
 function animate() {
     ctx.clearRect(0, 0, window_width, window_height);
     circles.forEach(circle => {
-        circle.update(ctx, circles);
+        circle.update();
+        circle.draw(ctx);
     });
+    drawCounter();
     requestAnimationFrame(animate);
 }
 
