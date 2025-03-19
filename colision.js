@@ -37,22 +37,23 @@ class Circle {
         this.posY += this.speed;
         if (this.posY - this.radius > window_height) {
             this.posY = -this.radius; // Reiniciar desde la parte superior
+            this.posX = Math.random() * (window_width - this.radius * 2) + this.radius; // Nueva posición X aleatoria
         }
     }
 }
 
 let circles = [];
 
-function generateCircles(n) {
-    for (let i = 0; i < n; i++) {
-        let radius = Math.random() * 30 + 20;
-        let x = Math.random() * (window_width - radius * 2) + radius;
-        let color = `#${Math.floor(Math.random() * 16777215).toString(16)}`;
-        let speed = Math.random() * 4 + 1;
-        let text = `C${i + 1}`;
-        circles.push(new Circle(x, radius, color, text, speed));
-    }
+function generateCircle() {
+    let radius = Math.random() * 30 + 20;
+    let x = Math.random() * (window_width - radius * 2) + radius;
+    let color = `#${Math.floor(Math.random() * 16777215).toString(16)}`;
+    let speed = Math.random() * 4 + 1;
+    let text = `C${circles.length + 1}`;
+    circles.push(new Circle(x, radius, color, text, speed));
 }
+
+setInterval(generateCircle, 1000); // Generar una nueva esfera cada segundo
 
 canvas.addEventListener("click", function(event) {
     const mouseX = event.clientX;
@@ -89,5 +90,4 @@ function animate() {
     requestAnimationFrame(animate);
 }
 
-generateCircles(10);
 animate();
